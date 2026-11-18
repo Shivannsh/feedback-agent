@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     listener_model: str = "gpt-6.2-astra"
     transcription_model: str = "gpt-transcribe"
+    presentation_transcription_model: str = "whisper-1"
     data_dir: Path = BACKEND_DIR / ".data"
     public_origin: str = ""
     worker_enabled: bool = True

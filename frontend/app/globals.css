@@ -1788,3 +1788,354 @@ textarea {
     flex-wrap: wrap;
   }
 }
+
+/* Presentation rehearsal */
+.presentation-invite {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 25px 28px;
+  border: 1px solid #ccdabc;
+  border-radius: 12px;
+  background: #eaf0e2;
+  margin-bottom: 26px;
+  color: #48623b;
+}
+.presentation-invite strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 29px;
+  font-weight: 400;
+  margin-bottom: 7px;
+}
+.presentation-invite small {
+  display: block;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #6b7d5d;
+}
+.present-setup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  padding: 26px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.present-setup label:not(.button) {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.present-setup input,
+.present-setup select {
+  width: 100%;
+}
+.deck-picker {
+  grid-column: 1/-1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.deck-picker select {
+  width: auto;
+  max-width: 100%;
+  flex: 1;
+  min-width: 180px;
+}
+.deck-picker p {
+  flex-basis: 100%;
+  line-height: 1.7;
+  margin: 0;
+}
+.presentation-stage {
+  border: 1px solid #d5dfcc;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+.stage-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 17px 22px;
+  font-size: 11px;
+  color: #64775a;
+}
+.stage-heading > span:first-child {
+  overflow-wrap: anywhere;
+}
+.stage-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.record-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #bd6b56;
+}
+.slide-canvas {
+  position: relative;
+  background: #26392e;
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.slide-canvas img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.slide-canvas img[hidden] {
+  display: none;
+}
+.paused-overlay {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  background: #1f302ae6;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.stage-controls {
+  padding: 18px 21px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.slide-navigation {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.recording-clock {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.recording-clock small {
+  font-size: 10px;
+  color: #899779;
+}
+.recording-clock meter {
+  width: 50px;
+  height: 10px;
+  accent-color: #72975b;
+}
+.saving-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.slide-strip {
+  padding: 16px 20px;
+  background: #f3f6ed;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+}
+.slide-strip button {
+  flex: 0 0 102px;
+  background: white;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  color: #7c8c6c;
+}
+.slide-strip button[aria-current] {
+  border-color: #789965;
+}
+.slide-strip img {
+  width: 90px;
+  height: 52px;
+  object-fit: contain;
+  background: #fff;
+  display: block;
+}
+.slide-strip span {
+  font-size: 10px;
+  display: block;
+  padding: 5px 0 2px;
+}
+.presentation-empty {
+  border: 1px dashed #d2dec7;
+  border-radius: 12px;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 30px;
+  background: #f5f8f0;
+  color: #839775;
+}
+.presentation-empty h2 {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 400;
+  margin: 20px 0 10px;
+}
+.presentation-empty p {
+  font-size: 12px;
+}
+.presentation-notes {
+  font-size: 11px;
+  color: #8a987c;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+.presentation-notes p:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.recording-recovery {
+  background: #f5f3e8;
+  border: 1px solid #e4dfc8;
+  border-radius: 10px;
+  padding: 24px;
+  margin-top: 20px;
+  font-size: 12px;
+}
+.recording-recovery h2 {
+  font-size: 18px;
+}
+.recording-recovery audio {
+  width: 100%;
+  margin: 15px 0;
+}
+.presentation-evidence {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 25px;
+  background: white;
+  margin: 25px 0;
+}
+.evidence-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+.evidence-heading h2 {
+  font-size: 15px;
+  font-weight: 500;
+}
+.evidence-heading span {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.evidence-slide {
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  background: #f1f4eb;
+  border-radius: 6px;
+}
+.visit-timeline {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  margin: 20px 0 15px;
+  padding-bottom: 5px;
+}
+.visit-timeline button {
+  border: 1px solid #dfe6d5;
+  background: #f7f9f3;
+  color: #788c68;
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 10px 15px;
+  white-space: nowrap;
+}
+.visit-timeline button span {
+  display: block;
+  margin-top: 5px;
+  font-size: 9px;
+}
+.visit-timeline button.selected {
+  background: #e8f0de;
+  border-color: #a5bd8b;
+  color: #526c3f;
+}
+.timed-passages {
+  margin-top: 22px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.timed-passages button {
+  display: block;
+  text-align: left;
+  padding: 14px;
+  background: white;
+  border: 0;
+  border-top: 1px solid #edf1e6;
+  color: #718564;
+  font-size: 12px;
+  line-height: 1.9;
+  width: 100%;
+  border-radius: 5px;
+}
+.timed-passages button span {
+  display: block;
+  color: #98a58b;
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+.timed-passages button.highlighted-segment {
+  background: #eaf2dd;
+  color: #536e40;
+}
+@media (max-width: 650px) {
+  .present-setup {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  .stage-heading {
+    padding: 14px;
+  }
+  .stage-controls {
+    padding: 15px;
+  }
+  .stage-controls > .button-row {
+    width: 100%;
+  }
+  .stage-controls > .button-row .button {
+    flex: 1;
+  }
+  .presentation-evidence {
+    padding: 18px;
+  }
+  .sidebar nav {
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  .sidebar .nav-item {
+    padding: 10px 9px;
+    font-size: 11px;
+  }
+  .presentation-invite {
+    padding: 22px;
+  }
+}

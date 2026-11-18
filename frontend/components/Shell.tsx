@@ -9,6 +9,7 @@ import {
   CircleHelp,
   History,
   Plus,
+  Presentation,
   Settings2,
   X,
 } from "lucide-react";
@@ -57,6 +58,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           >
             <Plus size={18} />
             New pitch
+          </Link>
+          <Link
+            className={`nav-item ${pathname === "/present" ? "active" : ""}`}
+            href="/present"
+          >
+            <Presentation size={18} />
+            Present slides
           </Link>
           <Link
             className={`nav-item ${pathname === "/history" ? "active" : ""}`}
@@ -146,15 +154,22 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                   <code>{health?.listener_model || "Waiting for backend"}</code>
                 </div>
                 <div className="settings-line">
-                  <span>Transcription</span>
+                  <span>Audio transcription</span>
                   <code>
                     {health?.transcription_model || "Waiting for backend"}
                   </code>
                 </div>
+                <div className="settings-line">
+                  <span>Presentation timing</span>
+                  <code>
+                    {health?.presentation_transcription_model ||
+                      "Waiting for backend"}
+                  </code>
+                </div>
                 <p className="small muted">
                   This version runs on your computer with local storage. Pitch
-                  text and submitted recordings are sent to OpenAI for
-                  processing.
+                  text, shown slides and submitted recordings are sent to OpenAI
+                  for processing.
                 </p>
               </>
             ) : (

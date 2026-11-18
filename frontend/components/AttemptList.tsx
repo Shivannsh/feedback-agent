@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, FileText, Mic } from "lucide-react";
+import { ArrowUpRight, FileText, Mic, Presentation } from "lucide-react";
 import { AttemptSummary, audienceNames, dateText } from "./api";
 
 export default function AttemptList({
@@ -16,7 +16,9 @@ export default function AttemptList({
           key={attempt.id}
         >
           <span className="attempt-icon">
-            {attempt.input_type === "audio" ? (
+            {attempt.input_type === "presentation" ? (
+              <Presentation size={18} />
+            ) : attempt.input_type === "audio" ? (
               <Mic size={18} />
             ) : (
               <FileText size={18} />

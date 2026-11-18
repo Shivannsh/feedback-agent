@@ -144,6 +144,18 @@ function NewPitch() {
             Meet a listener who’s hearing it for the first time.
           </p>
         </div>
+        {!parentId && (
+          <Link href="/present" className="presentation-invite">
+            <span>
+              <strong>Present with slides</strong>
+              <small>
+                Show your deck and speak naturally. Your listener sees and hears
+                your pitch together.
+              </small>
+            </span>
+            <ArrowRight size={22} />
+          </Link>
+        )}
         <div className="compose-layout">
           <form className="pitch-card" onSubmit={submit}>
             <div className="card-heading">

@@ -61,7 +61,21 @@ class Store:
                     usage TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS decks (
+                    id TEXT PRIMARY KEY,
+                    content_hash TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
+                    pages TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                );
             """)
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(attempts)")}
+            for name in ("presentation", "recording_id"):
+                if name not in columns:
+                    db.execute(f"ALTER TABLE attempts ADD COLUMN {name} TEXT")
+            db.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS recording_submission ON attempts(recording_id) WHERE recording_id IS NOT NULL"
+            )
 
     @contextmanager
     def connection(self):
@@ -74,23 +88,37 @@ class Store:
         finally:
             db.close()
 
-    def create(self, title, audience, transcript="", audio_name=None, parent_id=None):
+    def create(
+        self,
+        title,
+        audience,
+        transcript="",
+        audio_name=None,
+        parent_id=None,
+        presentation=None,
+    ):
         attempt_id = str(uuid4())
         with self.connection() as db:
             db.execute(
                 """INSERT INTO attempts
-                (id,title,audience,parent_id,input_type,audio_name,transcript,created_at,updated_at)
-                VALUES (?,?,?,?,?,?,?,?,?)""",
+                (id,title,audience,parent_id,input_type,audio_name,transcript,created_at,updated_at,presentation,recording_id)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     attempt_id,
                     title,
                     audience,
                     parent_id,
-                    "audio" if audio_name else "text",
+                    "presentation"
+                    if presentation
+                    else "audio"
+                    if audio_name
+                    else "text",
                     audio_name,
                     transcript,
                     now(),
                     now(),
+                    json.dumps(presentation) if presentation else None,
+                    presentation["recording_id"] if presentation else None,
                 ),
             )
         return self.get(attempt_id)
@@ -103,7 +131,14 @@ class Store:
             if row is None:
                 return None
             result = dict(row)
-            for field in ("segments", "listener", "evidence", "intent", "comparison"):
+            for field in (
+                "segments",
+                "listener",
+                "evidence",
+                "intent",
+                "comparison",
+                "presentation",
+            ):
                 result[field] = json.loads(result[field]) if result[field] else None
             result["runs"] = [
                 dict(run)
@@ -113,6 +148,45 @@ class Store:
                 )
             ]
             return result
+
+    def find_recording(self, recording_id):
+        with self.connection() as db:
+            row = db.execute(
+                "SELECT id FROM attempts WHERE recording_id=?", (recording_id,)
+            ).fetchone()
+        return self.get(row["id"]) if row else None
+
+    def get_deck(self, deck_id):
+        with self.connection() as db:
+            row = db.execute("SELECT * FROM decks WHERE id=?", (deck_id,)).fetchone()
+        if row is None:
+            return None
+        deck = dict(row)
+        deck["pages"] = json.loads(deck["pages"])
+        return deck
+
+    def list_decks(self):
+        with self.connection() as db:
+            ids = [
+                row["id"]
+                for row in db.execute("SELECT id FROM decks ORDER BY created_at DESC")
+            ]
+        return [self.get_deck(deck_id) for deck_id in ids]
+
+    def deck_by_hash(self, content_hash):
+        with self.connection() as db:
+            row = db.execute(
+                "SELECT id FROM decks WHERE content_hash=?", (content_hash,)
+            ).fetchone()
+        return self.get_deck(row["id"]) if row else None
+
+    def save_deck(self, deck_id, content_hash, name, pages):
+        with self.connection() as db:
+            db.execute(
+                "INSERT INTO decks VALUES (?,?,?,?,?)",
+                (deck_id, content_hash, name, json.dumps(pages), now()),
+            )
+        return self.get_deck(deck_id)
 
     def list(self):
         with self.connection() as db:

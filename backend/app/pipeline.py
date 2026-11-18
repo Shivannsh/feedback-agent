@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import re
+import tempfile
 import time
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from openai import (
 from pydantic import ValidationError
 
 from .config import get_settings
+from .presentations import align_words, compress_audio, visual_content, visual_ids
 from .schemas import AUDIENCES, ComparisonReport, EvidenceReview, ListenerReport
 
 PROMPTS = Path(__file__).parent / "prompts"
@@ -37,8 +39,8 @@ def listener_input(attempt: dict) -> dict:
     }
 
 
-def validate_references(report, segments, listener=None, intent=None):
-    valid_ids = {segment["id"] for segment in segments}
+def validate_references(report, segments, listener=None, intent=None, slide_ids=()):
+    valid_ids = {segment["id"] for segment in segments} | set(slide_ids)
     references = []
     if isinstance(report, ListenerReport):
         references.extend(belief.source_segment_ids for belief in report.beliefs)
@@ -98,7 +100,9 @@ class ModelService:
                     {"role": "system", "content": prompt},
                     {
                         "role": "user",
-                        "content": json.dumps(payload, ensure_ascii=False),
+                        "content": visual_content(
+                            self.store, self.store.get(attempt_id), payload
+                        ),
                     },
                 ],
                 text_format=schema,
@@ -152,6 +156,43 @@ class ModelService:
             )
         return text
 
+    async def transcribe_presentation(self, attempt):
+        settings = get_settings()
+        started = time.monotonic()
+        with tempfile.TemporaryDirectory(prefix="presentation-audio-") as temporary:
+            compressed = Path(temporary) / "pitch.mp3"
+            await asyncio.to_thread(
+                compress_audio,
+                self.store.directory / "audio" / attempt["audio_name"],
+                compressed,
+            )
+            async with AsyncOpenAI(
+                api_key=settings.openai_api_key, timeout=240, max_retries=1
+            ) as client:
+                with compressed.open("rb") as audio:
+                    result = await client.audio.transcriptions.create(
+                        model=settings.presentation_transcription_model,
+                        file=audio,
+                        response_format="verbose_json",
+                        timestamp_granularities=["word"],
+                    )
+        self.store.record_run(
+            attempt["id"],
+            "presentation_transcription",
+            settings.presentation_transcription_model,
+            "word-timestamps-v1",
+            round((time.monotonic() - started) * 1000),
+            {},
+        )
+        words = [word.model_dump() for word in (result.words or [])]
+        segments = align_words(words, attempt["presentation"])
+        text = " ".join(segment["text"] for segment in segments)
+        if len(text) > 40000:
+            raise ValueError(
+                "This presentation exceeds the transcript limit. Try a shorter pitch."
+            )
+        return text, segments
+
 
 def public_error(error):
     # Provider exception text can contain private request content or credentials.
@@ -193,7 +234,10 @@ async def process_job(store, job, service=None):
                 ComparisonReport,
             )
             validate_references(
-                report, attempt["segments"], intent=payload["takeaways"]
+                report,
+                attempt["segments"],
+                intent=payload["takeaways"],
+                slide_ids=visual_ids(attempt),
             )
             store.update(
                 attempt_id, comparison=report.model_dump(), comparison_status="ready"
@@ -201,8 +245,14 @@ async def process_job(store, job, service=None):
         else:
             if not attempt["transcript"]:
                 store.update(attempt_id, status="transcribing")
-                transcript = await service.transcribe(attempt)
-                store.update(attempt_id, transcript=transcript)
+                if attempt.get("presentation"):
+                    transcript, segments = await service.transcribe_presentation(
+                        attempt
+                    )
+                    store.update(attempt_id, transcript=transcript, segments=segments)
+                else:
+                    transcript = await service.transcribe(attempt)
+                    store.update(attempt_id, transcript=transcript)
                 attempt = store.get(attempt_id)
             if not attempt["segments"]:
                 store.update(
@@ -214,7 +264,9 @@ async def process_job(store, job, service=None):
                 report = await service.generate(
                     attempt_id, "listener", listener_input(attempt), ListenerReport
                 )
-                validate_references(report, attempt["segments"])
+                validate_references(
+                    report, attempt["segments"], slide_ids=visual_ids(attempt)
+                )
                 store.update(attempt_id, listener=report.model_dump())
                 attempt = store.get(attempt_id)
             if not attempt["evidence"]:
@@ -229,7 +281,10 @@ async def process_job(store, job, service=None):
                     EvidenceReview,
                 )
                 validate_references(
-                    review, attempt["segments"], listener=attempt["listener"]
+                    review,
+                    attempt["segments"],
+                    listener=attempt["listener"],
+                    slide_ids=visual_ids(attempt),
                 )
                 store.update(attempt_id, evidence=review.model_dump())
             store.update(attempt_id, status="ready", error=None)

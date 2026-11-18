@@ -11,6 +11,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .config import get_settings
 from .pipeline import worker_loop
+from .presentation_routes import presentation_routes
 from .schemas import Audience, CreateAttempt, IntentInput
 from .store import Store
 
@@ -45,6 +46,7 @@ def create_app(store=None, worker_enabled=None):
 
     app = FastAPI(title="First Listener", lifespan=lifespan)
     app.state.store = store
+    app.include_router(presentation_routes(store))
     app.add_middleware(
         TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"]
     )
@@ -69,7 +71,7 @@ def create_app(store=None, worker_enabled=None):
                 status_code=403,
             )
         response = await call_next(request)
-        response.headers["Cache-Control"] = "no-store"
+        response.headers.setdefault("Cache-Control", "no-store")
         return response
 
     def require_attempt(attempt_id):
@@ -93,6 +95,7 @@ def create_app(store=None, worker_enabled=None):
             "api_key_configured": bool(current.openai_api_key.strip()),
             "listener_model": current.listener_model,
             "transcription_model": current.transcription_model,
+            "presentation_transcription_model": current.presentation_transcription_model,
             "storage": "local",
             "max_audio_mb": 24,
         }

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 AUDIENCES = {
     "general": "A general business listener. Familiar with everyday business concepts. Hearing about this company for the first time.",
@@ -29,6 +29,57 @@ class IntentInput(BaseModel):
         if any(not value or len(value) > 600 for value in cleaned):
             raise ValueError("Each takeaway must contain between 1 and 600 characters.")
         return cleaned
+
+
+class SlideEvent(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    type: Literal["start", "slide", "pause", "resume", "finish"]
+    slide: int = Field(ge=1, le=20)
+    time: float = Field(ge=0, le=900.1)
+    wall_time: float = Field(ge=0, le=14400)
+
+
+class PresentationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    deck_id: str = Field(pattern=r"^[a-f0-9-]{36}$")
+    recording_id: str = Field(pattern=r"^[a-f0-9-]{36}$")
+    duration: float = Field(ge=1, le=900.1)
+    events: list[SlideEvent] = Field(min_length=2, max_length=500)
+
+    @model_validator(mode="after")
+    def validate_timeline(self):
+        if self.events[0].type != "start" or self.events[0].time != 0:
+            raise ValueError("The presentation must start at recording time zero.")
+        if (
+            self.events[-1].type != "finish"
+            or abs(self.events[-1].time - self.duration) > 0.05
+        ):
+            raise ValueError("The presentation must end at the recording duration.")
+        active = True
+        previous = self.events[0]
+        for index, event in enumerate(self.events[1:], 1):
+            if event.time < previous.time or event.wall_time < previous.wall_time:
+                raise ValueError("Timeline events must be in time order.")
+            if event.time > self.duration + 0.05:
+                raise ValueError("A slide event lies outside the recording.")
+            if event.type == "start" or (
+                event.type == "finish" and index != len(self.events) - 1
+            ):
+                raise ValueError("Only one start and finish are permitted.")
+            if not active and abs(event.time - previous.time) > 0.05:
+                raise ValueError("Recording time must stay still during a pause.")
+            if event.type == "pause":
+                if not active:
+                    raise ValueError("The recording is already paused.")
+                active = False
+            elif event.type == "resume":
+                if active:
+                    raise ValueError("The recording is already running.")
+                active = True
+            if event.type != "slide" and event.slide != previous.slide:
+                raise ValueError("A slide change requires its own slide event.")
+            previous = event
+        return self
 
 
 class Belief(BaseModel):

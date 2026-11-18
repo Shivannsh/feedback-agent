@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import Shell from "@/components/Shell";
+import PresentationEvidence from "@/components/PresentationEvidence";
 import {
   api,
   Attempt,
@@ -145,7 +146,11 @@ export default function AttemptPage() {
       () =>
         document
           .getElementById(
-            ids.length ? `segment-${ids[0]}` : "transcript-section",
+            attempt?.presentation
+              ? "presentation-evidence"
+              : ids.length
+                ? `segment-${ids[0]}`
+                : "transcript-section",
           )
           ?.scrollIntoView({ behavior: "smooth", block: "center" }),
       80,
@@ -156,7 +161,9 @@ export default function AttemptPage() {
     return ids.length ? (
       <button className="source-button" onClick={() => showSources(ids)}>
         <FileText size={12} />
-        View passage{ids.length > 1 ? "s" : ""}
+        {attempt?.presentation
+          ? "View slide & passage"
+          : `View passage${ids.length > 1 ? "s" : ""}`}
         <ChevronRight size={12} />
       </button>
     ) : null;
@@ -200,7 +207,11 @@ export default function AttemptPage() {
                 </div>
               </div>
               <Link
-                href={`/?revise=${attempt.id}`}
+                href={
+                  attempt.presentation
+                    ? `/present?deck=${attempt.presentation.deck_id}`
+                    : `/?revise=${attempt.id}`
+                }
                 className="button secondary"
               >
                 <RefreshCw size={15} />
@@ -381,7 +392,11 @@ export default function AttemptPage() {
                 <section className="report-card beliefs-card">
                   <div className="section-heading">
                     <h2>How I understood it</h2>
-                    <span className="small muted">Linked to your words</span>
+                    <span className="small muted">
+                      {attempt.presentation
+                        ? "Linked to slides and speech"
+                        : "Linked to your words"}
+                    </span>
                   </div>
                   {report.beliefs.map((belief, index) => {
                     const annotation = attempt.evidence?.annotations.find(
@@ -512,62 +527,70 @@ export default function AttemptPage() {
                 </section>
               </>
             )}
-            <section className="transcript-section" id="transcript-section">
-              <button
-                className="transcript-toggle"
-                aria-expanded={transcriptOpen}
-                onClick={() => setTranscriptOpen(!transcriptOpen)}
-              >
-                <FileText size={17} />
-                <span>Your original pitch</span>
-                <ChevronDown
-                  size={17}
-                  className={transcriptOpen ? "rotated" : ""}
-                />
-              </button>
-              {transcriptOpen && (
-                <div className="transcript-body">
-                  {attempt.input_type === "audio" && (
-                    <>
-                      <audio
-                        controls
-                        src={`/api/attempts/${attempt.id}/audio`}
-                        className="audio-player"
-                      />
-                      <p className="small muted">
-                        Passages are linked to the transcript. Audio playback
-                        covers the full recording.
+            {attempt.presentation && (
+              <PresentationEvidence attempt={attempt} highlight={highlight} />
+            )}
+            {!attempt.presentation && (
+              <section className="transcript-section" id="transcript-section">
+                <button
+                  className="transcript-toggle"
+                  aria-expanded={transcriptOpen}
+                  onClick={() => setTranscriptOpen(!transcriptOpen)}
+                >
+                  <FileText size={17} />
+                  <span>Your original pitch</span>
+                  <ChevronDown
+                    size={17}
+                    className={transcriptOpen ? "rotated" : ""}
+                  />
+                </button>
+                {transcriptOpen && (
+                  <div className="transcript-body">
+                    {attempt.input_type === "audio" && (
+                      <>
+                        <audio
+                          controls
+                          src={`/api/attempts/${attempt.id}/audio`}
+                          className="audio-player"
+                        />
+                        <p className="small muted">
+                          Passages are linked to the transcript. Audio playback
+                          covers the full recording.
+                        </p>
+                      </>
+                    )}
+                    {attempt.segments ? (
+                      attempt.segments.map((segment) => (
+                        <p
+                          id={`segment-${segment.id}`}
+                          className={
+                            highlight.includes(segment.id)
+                              ? "highlighted-segment"
+                              : ""
+                          }
+                          key={segment.id}
+                        >
+                          <span>{segment.id}</span>
+                          {segment.text}
+                        </p>
+                      ))
+                    ) : (
+                      <p>
+                        {attempt.transcript ||
+                          "The transcript will appear after your recording is processed."}
                       </p>
-                    </>
-                  )}
-                  {attempt.segments ? (
-                    attempt.segments.map((segment) => (
-                      <p
-                        id={`segment-${segment.id}`}
-                        className={
-                          highlight.includes(segment.id)
-                            ? "highlighted-segment"
-                            : ""
-                        }
-                        key={segment.id}
-                      >
-                        <span>{segment.id}</span>
-                        {segment.text}
-                      </p>
-                    ))
-                  ) : (
-                    <p>
-                      {attempt.transcript ||
-                        "The transcript will appear after your recording is processed."}
-                    </p>
-                  )}
-                  <Link className="text-button" href={`/?revise=${attempt.id}`}>
-                    Edit as a new attempt
-                    <ArrowRight size={14} />
-                  </Link>
-                </div>
-              )}
-            </section>
+                    )}
+                    <Link
+                      className="text-button"
+                      href={`/?revise=${attempt.id}`}
+                    >
+                      Edit as a new attempt
+                      <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                )}
+              </section>
+            )}
             <div className="report-bottom">
               <span className="small muted">
                 {attempt.runs.length

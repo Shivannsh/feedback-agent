@@ -13,3 +13,6 @@ __pycache__/
 .DS_Store
 backend/evals/results*.json
 
+# Local PDF demos and render scratch files
+/output/pdf/
+/tmp/pdfs/

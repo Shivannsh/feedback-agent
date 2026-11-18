@@ -14,6 +14,7 @@ export type Health = {
   api_key_configured: boolean;
   listener_model: string;
   transcription_model: string;
+  presentation_transcription_model?: string;
 };
 export type Belief = {
   topic: string;
@@ -39,8 +40,18 @@ export type AttemptSummary = {
   parent_id: string | null;
 };
 export type Attempt = AttemptSummary & {
+  presentation: Presentation | null;
   transcript: string;
-  segments: { id: string; text: string }[] | null;
+  segments:
+    | {
+        id: string;
+        text: string;
+        start?: number;
+        end?: number;
+        slide_id?: string;
+        visit_id?: string;
+      }[]
+    | null;
   error: string | null;
   listener: Report | null;
   evidence: {
@@ -77,6 +88,37 @@ export type Attempt = AttemptSummary & {
     latency_ms: number;
   }[];
 };
+
+export type Deck = {
+  id: string;
+  name: string;
+  pages: { number: number; width: number; height: number }[];
+};
+export type SlideEvent = {
+  type: "start" | "slide" | "pause" | "resume" | "finish";
+  slide: number;
+  time: number;
+  wall_time: number;
+};
+export type Presentation = {
+  deck_id: string;
+  recording_id: string;
+  duration: number;
+  events: SlideEvent[];
+};
+export function clockText(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+}
+export function presentationVisits(presentation: Presentation) {
+  return presentation.events.flatMap((event, index, events) => {
+    const next = events[index + 1];
+    return next &&
+      !["pause", "finish"].includes(event.type) &&
+      next.time > event.time
+      ? [{ slide: event.slide, start: event.time, end: next.time }]
+      : [];
+  });
+}
 
 export async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
