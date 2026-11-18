@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.env.*
+!.env.example
+.data/
+.ruff_cache/
+*.tsbuildinfo
+.DS_Store
+backend/evals/results*.json
+
